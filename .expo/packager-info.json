@@ -1,9 +1,9 @@
 {
-  "devToolsPort": 19003,
-  "expoServerPort": 19004,
-  "packagerPort": 19005,
-  "packagerPid": 17356,
+  "devToolsPort": 19002,
+  "expoServerPort": 19000,
+  "packagerPort": 19001,
+  "packagerPid": 5899,
   "expoServerNgrokUrl": "https://9z-gzd.michele-bon.provider-app.exp.direct",
   "packagerNgrokUrl": "https://packager.9z-gzd.michele-bon.provider-app.exp.direct",
-  "ngrokPid": 17432
+  "ngrokPid": 6022
 }
