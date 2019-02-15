@@ -39,8 +39,8 @@ export default class App extends React.Component<{}, AppState> {
 
   onSubmit() {
     const callback = encodeURIComponent(Linking.makeUrl("callback"));
-    // const url = `urbiwallet://consent/bobcars/${callback}`;
-    const url = `exp://192.168.0.12:19000/--/consent/bobcars/${callback}`;
+    const url = `urbiwallet://consent/bobcars/${callback}`;
+    //const url = `exp://192.168.0.12:19000/--/consent/bobcars/${callback}`;
     Linking.openURL(url);
   }
 
