@@ -1,19 +1,29 @@
 import * as React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, AppState } from "react-native";
 import { textStyle as makeTextStyle } from "Urbi/utils/textStyles";
 import { colors } from "Urbi/utils/colors";
 import { Font, Linking } from "expo";
 import ButtonPrimary from "Urbi/molecules/buttons/ButtonPrimary";
 
-type AppState = {
+type State = {
   fontsLoaded: boolean;
+  response: string;
 };
 
-export default class App extends React.Component<{}, AppState> {
+export default class App extends React.Component<{}, State> {
   constructor(props: any) {
     super(props);
-    this.state = { fontsLoaded: false };
+    this.state = { fontsLoaded: false, response: "" };
     this.onSubmit = this.onSubmit.bind(this);
+    AppState.addEventListener("change", state => {
+      if (state === "active") {
+        Linking.parseInitialURLAsync().then(info => {
+          if (info.queryParams.payload) {
+            this.setState({ response: info.queryParams.payload });
+          }
+        });
+      }
+    });
   }
 
   async componentDidMount() {
@@ -25,16 +35,6 @@ export default class App extends React.Component<{}, AppState> {
       "Barlow-ExtraBold": require("./assets/fonts/Barlow-ExtraBold.ttf")
     });
     this.setState({ fontsLoaded: true });
-    Linking.parseInitialURLAsync().then(info => {
-      window.alert(
-        `path: ${info.path}, query: ${JSON.stringify(info.queryParams)}`
-      );
-    });
-  }
-
-  shouldComponentUpdate() {
-    console.log("should it?");
-    return true;
   }
 
   onSubmit() {
@@ -52,6 +52,9 @@ export default class App extends React.Component<{}, AppState> {
         <View style={styles.BottomButton}>
           <ButtonPrimary label="Get data from urbi!" onPress={this.onSubmit} />
         </View>
+        {this.state.response.length > 2 ? (
+          <Text style={styles.Info}>{this.state.response}</Text>
+        ) : null}
       </View>
     );
   }
@@ -66,6 +69,9 @@ const styles = StyleSheet.create({
   },
   Title: {
     ...makeTextStyle("hero", colors.brand)
+  },
+  Info: {
+    ...makeTextStyle("title", colors.uma)
   },
   BottomButton: {
     padding: 20

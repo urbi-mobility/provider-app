@@ -7,13 +7,13 @@
     "eject": "expo eject"
   },
   "dependencies": {
-    "expo": "^32.0.0",
+    "expo": "^31.0.0",
     "react": "16.5.0",
-    "react-native": "https://github.com/expo/react-native/archive/sdk-32.0.0.tar.gz",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-31.0.0.tar.gz",
     "tslib": "^1.9.3"
   },
   "devDependencies": {
-    "@types/expo": "^32.0.2",
+    "@types/expo": "^31.0.0",
     "@types/react": "^16.8.3",
     "@types/react-native": "^0.57.36",
     "babel-preset-expo": "^5.0.0",
