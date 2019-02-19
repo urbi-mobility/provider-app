@@ -1,9 +1,10 @@
 import * as React from "react";
-import { StyleSheet, Text, View, AppState } from "react-native";
+import { Alert, StyleSheet, Text, View, Clipboard } from "react-native";
 import { textStyle as makeTextStyle } from "Urbi/utils/textStyles";
 import { colors } from "Urbi/utils/colors";
 import { Font, Linking } from "expo";
 import ButtonPrimary from "Urbi/molecules/buttons/ButtonPrimary";
+import ButtonSecondary from "./Urbi/molecules/buttons/ButtonSecondary";
 
 const caBaseUrl = "https://urbitunnel.eu.ngrok.io";
 
@@ -17,6 +18,10 @@ export default class App extends React.Component<{}, State> {
     super(props);
     this.state = { fontsLoaded: false, walletResponse: "" };
     this.onSubmit = this.onSubmit.bind(this);
+    this.onReset = this.onReset.bind(this);
+    this.onView = this.onView.bind(this);
+    this.onCopy = this.onCopy.bind(this);
+
     Linking.addEventListener("url", info => {
       if (info) {
         const { queryParams } = Linking.parse(info.url);
@@ -25,6 +30,7 @@ export default class App extends React.Component<{}, State> {
         }
       }
     });
+
     Linking.parseInitialURLAsync().then(info => {
       if (info.queryParams.payload) {
         this.setState({ walletResponse: info.queryParams.payload });
@@ -59,12 +65,27 @@ export default class App extends React.Component<{}, State> {
       }
     } else {
       const callback = encodeURIComponent(Linking.makeUrl("callback"));
-      // const url = `urbiwallet://consent/bobcars/${callback}`;
-      // const url = `urbiwallet://consent/bobcars/${callback}`;
-      // const url = `exp://192.168.2.184:19000/--/consent/bobcars/${callback}`;
+      // standalone app:                 const url = `urbiwallet://consent/bobcars/${callback}`;
+      // dev app (expo - adjust port):   const url = `exp://192.168.2.184:19004/--/consent/bobcars/${callback}`;
+      // published (expo):               const url = `exp://exp.host/@michele.bon/urbi-wallet/--/consent/bobcars/${callback}`;
       const url = `exp://exp.host/@michele.bon/urbi-wallet/--/consent/bobcars/${callback}`;
       Linking.openURL(url);
     }
+  }
+
+  onReset() {
+    this.setState({ walletResponse: "" });
+  }
+
+  onCopy() {
+    Clipboard.setString(this.state.walletResponse);
+  }
+
+  onView() {
+    Alert.alert("Data from Urbi", this.state.walletResponse, [
+      { text: "Copy", onPress: this.onCopy },
+      { text: "Ok" }
+    ]);
   }
 
   render() {
@@ -74,7 +95,7 @@ export default class App extends React.Component<{}, State> {
     return (
       <View style={styles.Container}>
         <Text style={styles.Title}>Welcome to BobCars!</Text>
-        <View style={styles.BottomButton}>
+        <View style={styles.ActionButton}>
           {responseFetched ? (
             <Text style={styles.Info}>Data fetched from Urbi 👌</Text>
           ) : null}
@@ -83,6 +104,16 @@ export default class App extends React.Component<{}, State> {
             onPress={this.onSubmit}
           />
         </View>
+        {responseFetched ? (
+          <View style={styles.SecondaryButton}>
+            <ButtonSecondary label="View data" onPress={this.onView} />
+          </View>
+        ) : null}
+        {responseFetched ? (
+          <View style={styles.SecondaryButton}>
+            <ButtonSecondary label="Reset data" onPress={this.onReset} />
+          </View>
+        ) : null}
       </View>
     );
   }
@@ -103,7 +134,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 10
   },
-  BottomButton: {
+  ActionButton: {
     padding: 20
+  },
+  SecondaryButton: {
+    padding: 2
   }
 });
