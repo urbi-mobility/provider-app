@@ -2,21 +2,29 @@ import * as React from "react";
 import { Alert, StyleSheet, Text, View, Clipboard } from "react-native";
 import { textStyle as makeTextStyle } from "Urbi/utils/textStyles";
 import { colors } from "Urbi/utils/colors";
-import { Font, Linking } from "expo";
-import ButtonPrimary from "Urbi/molecules/buttons/ButtonPrimary";
-import ButtonSecondary from "./Urbi/molecules/buttons/ButtonSecondary";
+import { Font, Linking, AppLoading } from "expo";
+import Button from "Urbi/molecules/buttons/Button";
+import {
+  height,
+  horizontalPadding,
+  maxWidth,
+  minWidth
+} from "Urbi/molecules/buttons/ButtonPrimary";
 
 const caBaseUrl = "https://urbitunnel.eu.ngrok.io";
 
 type State = {
   fontsLoaded: boolean;
+  shownSplash: boolean;
   walletResponse: string;
 };
 
 export default class App extends React.Component<{}, State> {
   constructor(props: any) {
     super(props);
-    this.state = { fontsLoaded: false, walletResponse: "" };
+    this.state = { fontsLoaded: false, shownSplash: false, walletResponse: "" };
+    setTimeout(() => this.setState({ shownSplash: true }), 1500);
+
     this.onSubmit = this.onSubmit.bind(this);
     this.onReset = this.onReset.bind(this);
     this.onView = this.onView.bind(this);
@@ -89,8 +97,9 @@ export default class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { fontsLoaded, walletResponse } = this.state;
-    if (!fontsLoaded) return null;
+    const { fontsLoaded, shownSplash, walletResponse } = this.state;
+    if (!fontsLoaded || !shownSplash)
+      return <AppLoading onError={console.warn} />;
     const responseFetched = walletResponse.length > 2;
     return (
       <View style={styles.Container}>
@@ -99,19 +108,49 @@ export default class App extends React.Component<{}, State> {
           {responseFetched ? (
             <Text style={styles.Info}>Data fetched from Urbi 👌</Text>
           ) : null}
-          <ButtonPrimary
+          <Button
             label={responseFetched ? "Sign up" : "Get data from urbi"}
+            backgroundColor={colors.ulisse}
+            color={colors.brand}
+            height={height}
+            horizontalPadding={horizontalPadding}
+            maxWidth={maxWidth}
+            minWidth={minWidth}
+            textStyle="bodyBold"
+            isUppercase
             onPress={this.onSubmit}
           />
         </View>
         {responseFetched ? (
           <View style={styles.SecondaryButton}>
-            <ButtonSecondary label="View data" onPress={this.onView} />
+            <Button
+              label="View data"
+              backgroundColor={colors.transparent}
+              color={colors.ulisse}
+              height={height}
+              horizontalPadding={horizontalPadding}
+              maxWidth={maxWidth}
+              minWidth={minWidth}
+              textStyle="bodyBold"
+              isUppercase={false}
+              onPress={this.onView}
+            />
           </View>
         ) : null}
         {responseFetched ? (
           <View style={styles.SecondaryButton}>
-            <ButtonSecondary label="Reset data" onPress={this.onReset} />
+            <Button
+              label="Reset data"
+              backgroundColor={colors.transparent}
+              color={colors.ulisse}
+              height={height}
+              horizontalPadding={horizontalPadding}
+              maxWidth={maxWidth}
+              minWidth={minWidth}
+              textStyle="bodyBold"
+              isUppercase={false}
+              onPress={this.onReset}
+            />
           </View>
         ) : null}
       </View>
@@ -122,15 +161,15 @@ export default class App extends React.Component<{}, State> {
 const styles = StyleSheet.create({
   Container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "rgb(174, 1, 109)",
     alignItems: "center",
     justifyContent: "center"
   },
   Title: {
-    ...makeTextStyle("hero", colors.brand)
+    ...makeTextStyle("hero", colors.ulisse)
   },
   Info: {
-    ...makeTextStyle("title", colors.uma),
+    ...makeTextStyle("title", colors.ulisse),
     textAlign: "center",
     marginBottom: 10
   },
