@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, View, Clipboard } from "react-native";
 import { textStyle as makeTextStyle } from "Urbi/utils/textStyles";
 import { colors } from "Urbi/utils/colors";
 import { Font, Linking, AppLoading } from "expo";
+import Spinner from "react-native-loading-spinner-overlay";
 import Button from "Urbi/molecules/buttons/Button";
 import {
   height,
@@ -11,18 +12,26 @@ import {
   minWidth
 } from "Urbi/molecules/buttons/ButtonPrimary";
 
-const caBaseUrl = "https://urbitunnel.eu.ngrok.io";
+const caBaseUrl = "https://token.urbi.co";
 
 type State = {
   fontsLoaded: boolean;
   shownSplash: boolean;
+  showSpinner: boolean;
   walletResponse: string;
 };
+
+const alert = (msg: string) => setTimeout(() => window.alert(msg), 250);
 
 export default class App extends React.Component<{}, State> {
   constructor(props: any) {
     super(props);
-    this.state = { fontsLoaded: false, shownSplash: false, walletResponse: "" };
+    this.state = {
+      fontsLoaded: false,
+      shownSplash: false,
+      showSpinner: false,
+      walletResponse: ""
+    };
     setTimeout(() => this.setState({ shownSplash: true }), 1500);
 
     this.onSubmit = this.onSubmit.bind(this);
@@ -34,14 +43,14 @@ export default class App extends React.Component<{}, State> {
       if (info) {
         const { queryParams } = Linking.parse(info.url);
         if (queryParams.payload) {
-          this.setState({ walletResponse: queryParams.payload });
+          this.signup(queryParams.payload);
         }
       }
     });
 
     Linking.parseInitialURLAsync().then(info => {
       if (info.queryParams.payload) {
-        this.setState({ walletResponse: info.queryParams.payload });
+        this.signup(info.queryParams.payload);
       }
     });
   }
@@ -57,28 +66,52 @@ export default class App extends React.Component<{}, State> {
     this.setState({ fontsLoaded: true });
   }
 
-  async onSubmit() {
-    const { walletResponse } = this.state;
-    if (walletResponse.length > 2) {
-      const response = await fetch(`${caBaseUrl}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: walletResponse
-      });
-      if (response.status !== 200) {
-        window.alert(`Our server sent us back a code ${response.status}`);
-      } else {
-        const json = await response.json();
-        window.alert(`Response from server:\n${JSON.stringify(json)}`);
-      }
+  async signup(walletResponse: string) {
+    this.setState({
+      showSpinner: true,
+      walletResponse
+    });
+
+    const response = await fetch(`${caBaseUrl}/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: walletResponse
+    });
+
+    if (response.status !== 200) {
+      alert(`Our server sent us back a code ${response.status}`);
     } else {
-      const callback = encodeURIComponent(Linking.makeUrl("callback"));
-      // standalone app:                 const url = `urbiwallet://consent/bobcars/${callback}`;
-      // dev app (expo - adjust port):   const url = `exp://192.168.2.184:19004/--/consent/bobcars/${callback}`;
-      // published (expo):               const url = `exp://exp.host/@michele.bon/urbi-wallet/--/consent/bobcars/${callback}`;
-      const url = `exp://exp.host/@michele.bon/urbi-wallet/--/consent/bobcars/${callback}`;
-      Linking.openURL(url);
+      const json = await response.json();
+      console.log(`Response from server:\n${JSON.stringify(json)}`);
+      setTimeout(() => this.setState({ showSpinner: false }), 2500);
     }
+  }
+
+  async onSubmit() {
+    // depending on the env, urbi wallet could be reached at one of these urls:
+    // standalone app:                 urbiwallet://consent/bobcars/${callback}
+    // dev app (expo - adjust port):   exp://192.168.2.184:19004/--/consent/bobcars/${callback}
+    // published (expo):               exp://exp.host/@michele.bon/urbi-wallet/--/consent/bobcars/${callback}
+    const callback = Linking.makeUrl("callback");
+    let prefix = callback.substring(0, callback.indexOf("callback"));
+
+    // if we're running on dev, we need to contact the wallet on the other port
+    // (we assume here that the 2 apps are served on ports 19000 -- the default -- and 19004 -- the next available)
+    const match = /exp:\/\/[^:\/]+:(\d+)/.exec(prefix);
+    const port = match && match[1];
+    if (port) {
+      if (port === "19000") {
+        prefix = prefix.replace(port, "19004");
+      } else {
+        prefix = prefix.replace(port, "19000");
+      }
+    } else if (prefix.indexOf("BobCars")) {
+      // app is published on expo, prefix is exp://exp.host/@michele.bon/BobCars/--/
+      prefix = prefix.replace("BobCars", "urbi-wallet");
+    }
+    const url = `${prefix}consent/bobcars/${encodeURIComponent(callback)}`;
+    console.log(`opening ${url}`);
+    Linking.openURL(url);
   }
 
   onReset() {
@@ -97,19 +130,35 @@ export default class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { fontsLoaded, shownSplash, walletResponse } = this.state;
+    const {
+      fontsLoaded,
+      shownSplash,
+      showSpinner,
+      walletResponse
+    } = this.state;
     if (!fontsLoaded || !shownSplash)
       return <AppLoading onError={console.warn} />;
     const responseFetched = walletResponse.length > 2;
+
     return (
       <View style={styles.Container}>
+        <Spinner
+          visible={showSpinner}
+          textContent="Signing up..."
+          textStyle={styles.Spinner}
+          color={colors.primary}
+          overlayColor="rgba(0, 0, 0, 0.75)"
+        />
         <Text style={styles.Title}>Welcome to BobCars!</Text>
         <View style={styles.ActionButton}>
           {responseFetched ? (
-            <Text style={styles.Info}>Data fetched from Urbi 👌</Text>
+            <Text style={styles.Info}>
+              Nice to see you, {JSON.parse(walletResponse).payload.firstName}!
+              👋
+            </Text>
           ) : null}
           <Button
-            label={responseFetched ? "Sign up" : "Get data from urbi"}
+            label={responseFetched ? "View data" : "Login with Urbi Wallet"}
             backgroundColor={colors.ulisse}
             color={colors.brand}
             height={height}
@@ -118,25 +167,9 @@ export default class App extends React.Component<{}, State> {
             minWidth={minWidth}
             textStyle="bodyBold"
             isUppercase
-            onPress={this.onSubmit}
+            onPress={responseFetched ? this.onView : this.onSubmit}
           />
         </View>
-        {responseFetched ? (
-          <View style={styles.SecondaryButton}>
-            <Button
-              label="View data"
-              backgroundColor={colors.transparent}
-              color={colors.ulisse}
-              height={height}
-              horizontalPadding={horizontalPadding}
-              maxWidth={maxWidth}
-              minWidth={minWidth}
-              textStyle="bodyBold"
-              isUppercase={false}
-              onPress={this.onView}
-            />
-          </View>
-        ) : null}
         {responseFetched ? (
           <View style={styles.SecondaryButton}>
             <Button
@@ -178,5 +211,10 @@ const styles = StyleSheet.create({
   },
   SecondaryButton: {
     padding: 2
+  },
+  Spinner: {
+    ...makeTextStyle("title", colors.ulisse),
+    fontSize: 22,
+    textAlign: "center"
   }
 });

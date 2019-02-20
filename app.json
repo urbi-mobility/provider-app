@@ -23,6 +23,10 @@
         "LSApplicationQueriesSchemes": ["urbiwallet"]
       }
     },
-    "scheme": "bobcars"
+    "android": {
+      "package": "com.bobcars"
+    },
+    "scheme": "bobcars",
+    "description": "A mock mobility provider app"
   }
 }
